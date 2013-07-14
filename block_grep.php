@@ -1,10 +1,6 @@
 #!/usr/bin/env php
 <?
 
-/**
- * From https://gist.github.com/azat/5565095
- */
-
 if ($argc < 3) {
     fprintf(STDERR, "Usage: %s [-v | --invert-match] pattern file-name\n",
             $argv[0]);
@@ -45,3 +41,4 @@ foreach ($matches as $match) {
 }
 
 fprintf(STDERR, "Examined %d blocks. Matched %d blocks.\n", count($matches), $matchedBlocks);
+
