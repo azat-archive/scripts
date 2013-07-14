@@ -9,9 +9,6 @@
 # 
 # Run using `watch` util
 #
-# Original available here:
-# https://gist.github.com/azat/2830255
-#
 
 if [ $# -lt 1 ]; then
         echo "Usage: $0 /path/to/file [ PID]" >&2
