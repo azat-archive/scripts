@@ -47,7 +47,7 @@ fi
 if [ "x$PID" = "x" ]; then
         PROC_FD=$( lsof $SRCFILE | head -n2 | tail -n1 | awk '{printf "/proc/%u/fdinfo/%u", $2, substr($4, 1, length($4)-1)}' )
 else
-        PROC_FD_BASENAME=$( ls -l /proc/$PID/fd 2>&1 | grep "$SRCFILE" | head -n1 | sed -r 's/.+ ([0-9]+)\s+->.+/\1/' )
+        PROC_FD_BASENAME=$( ls -l /proc/$PID/fd 2>/dev/null | awk '{printf "%s\t%s\n", $NF, $(NF-2)}' | grep "^$SRCFILE"$'\t' | head -n1 | awk -F$'\t' '{print $NF}' )
         PROC_FD="/proc/$PID/fdinfo/$PROC_FD_BASENAME"
 fi
 
