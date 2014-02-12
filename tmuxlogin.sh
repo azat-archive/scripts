@@ -104,15 +104,6 @@ open_windows() {
     return
     fi
 
-    # if this is a new session then there is no point in creating a new window
-    if [ -n "$new_session" ]; then
-        # this is a brand new session with only 1 window, so just rename it
-        tmux rename-window  -t "$SESSION:0" "$WINDOW"
-    else
-        # create new window in this pre-existing session
-        tmux new-window    -t "$SESSION" -a -n "$WINDOW"
-    fi
-
     # split window and echo servers to each pane
     # sending keys gives you a chance to decide when to type in password
     for server in $SERVERS; do
@@ -121,6 +112,15 @@ open_windows() {
         # split -h seems to stop at 5 unless layout is changed
         tmux select-layout -t "$SESSION:$WINDOW" tiled
     done
+
+    # if this is a new session then there is no point in creating a new window
+    if [ -n "$new_session" ]; then
+        # this is a brand new session with only 1 window, so just rename it
+        tmux rename-window  -t "$SESSION:0" "$WINDOW"
+    else
+        # create new window in this pre-existing session
+        tmux new-window    -t "$SESSION" -a -n "$WINDOW"
+    fi
 
     tmux kill-pane     -t "$SESSION:$WINDOW.0"     # remove the original pane
     tmux select-pane   -t "$SESSION:$WINDOW.0"     # select the first pane
