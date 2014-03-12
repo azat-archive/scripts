@@ -11,7 +11,7 @@
 #
 
 if [ $# -lt 1 ]; then
-    echo "Usage: $0 /path/to/file [ PID]" >&2
+    echo "Usage: $0 PID | /path/to/file [ PID]" >&2
     exit 2
 fi
 
@@ -19,55 +19,62 @@ SRCFILE=$1
 PID=$2
 
 # Not existed file, or not set
-if [ "x$SRCFILE" = "x" ]; then
-    echo "File $SRCFILE not exist"
-    exit 1
-fi
-SRCFILE=$(readlink -f $SRCFILE)
-
-# Maybe not regular file
-DEV=0
-if [ ! -f $SRCFILE ]; then
-    if $(file $SRCFILE 2>/dev/null | grep -q "sticky block special"); then
-        DEV=1
+if [ ! -f "$SRCFILE" ]; then
+    if [[ $SRCFILE =~ ^[0-9]*$ ]]; then
+        PID=$SRCFILE
     else
-        echo "File $SRCFILE is not exist"
+        echo "File $SRCFILE not exist"
         exit 1
     fi
-fi
-
-# Find lsof, or PID
-LSOF=`which lsof`
-if [ "x$LSOF" = "x" ] && [ "x$PID" = "x" ]; then
-    echo "No 'lsof' or PID"
-    exit 1
 fi
 
 function getProcFiles()
 {
     pid=$1
+    src="$2"
 
     if [ "x$pid" = "x" ]; then
-        lsof $SRCFILE | tail -n+2 | awk '{printf "/proc/%u/fdinfo/%u\n", $2, substr($4, 1, length($4)-1)}'
+        lsof $src | tail -n+2 | awk '{printf "/proc/%u/fdinfo/%u\n", $2, substr($4, 1, length($4)-1)}'
     else
-        ls -l /proc/$pid/fd 2>/dev/null | awk '{printf "%s\t%s\n", $NF, $(NF-2)}' | grep "^$SRCFILE"$'\t' | awk -F$'\t' '{print $NF}' | awk -vpid=$pid '{printf "/proc/%u/fdinfo/%u\n", pid, $1}'
+        pattern=".*"
+        if [ ! "$src" = "$pid" ]; then
+            pattern="$src"
+        fi
+
+        ls -l /proc/$pid/fd 2>/dev/null | awk '{printf "%s\t%s\n", $NF, $(NF-2)}' | grep "^$pattern"$'\t' | awk -F$'\t' '{print $NF}' | awk -vpid=$pid '{printf "/proc/%u/fdinfo/%u\n", pid, $1}'
     fi
 }
 
-for PROC_FD in $( getProcFiles $PID ); do
+function getFileInfoByProc()
+{
+    src=$(readlink -f ${1/fdinfo/fd})
+
+    if [ ! -f $src ]; then
+        if $(file $src 2>/dev/null | grep -q "sticky block special"); then
+            blockdev --getsize64 $src
+            return
+        else
+            echo 0
+            return
+        fi
+    fi
+
+    wc -c $src | awk '{print $1}'
+}
+
+for PROC_FD in $( getProcFiles "$PID" "$SRCFILE" ); do
     PROC_FD_INFO=$( head -n1 "$PROC_FD" 2>/dev/null )
     if [ $? -ne 0 ]; then
         echo "Can't access to $PROC_FD"
     else
-        # Echo processes
-        FILESIZE=0
-        if [ $DEV -eq 0 ]; then
-            FILESIZE=$(wc -c $SRCFILE | awk '{print $1}')
+        size=$(getFileInfoByProc $PROC_FD)
+        if [ "$size" = "0" ]; then
+            percents=0
         else
-            FILESIZE=$(blockdev --getsize64 $SRCFILE)
+            percents=$(( `echo $PROC_FD_INFO | awk '{print $2}'` * 100 / $size ))
         fi
 
-        printf "[%20s] %i %%\n" $PROC_FD $(( `echo $PROC_FD_INFO | awk '{print $2}'` * 100 / $FILESIZE ))
+        printf "[%20s] %i %%\n" $PROC_FD $percents
     fi
 done
 
