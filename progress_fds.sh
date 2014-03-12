@@ -43,26 +43,31 @@ if [ "x$LSOF" = "x" ] && [ "x$PID" = "x" ]; then
         exit 1
 fi
 
-# Find fdinfo file
-if [ "x$PID" = "x" ]; then
-        PROC_FD=$( lsof $SRCFILE | head -n2 | tail -n1 | awk '{printf "/proc/%u/fdinfo/%u", $2, substr($4, 1, length($4)-1)}' )
-else
-        PROC_FD_BASENAME=$( ls -l /proc/$PID/fd 2>/dev/null | awk '{printf "%s\t%s\n", $NF, $(NF-2)}' | grep "^$SRCFILE"$'\t' | head -n1 | awk -F$'\t' '{print $NF}' )
-        PROC_FD="/proc/$PID/fdinfo/$PROC_FD_BASENAME"
-fi
+function getProcFiles()
+{
+        pid=$1
 
-# Get fd info
-PROC_FD_INFO=$( head -n1 "$PROC_FD" 2>/dev/null )
-if [ $? -ne 0 ]; then
-        echo "Can't access to $PROC_FD"
-else
-        # Echo processes
-        FILESIZE=0
-        if [ $DEV -eq 0 ]; then
-                FILESIZE=$(wc -c $SRCFILE | awk '{print $1}')
+        if [ "x$pid" = "x" ]; then
+                lsof $SRCFILE | tail -n+2 | awk '{printf "/proc/%u/fdinfo/%u\n", $2, substr($4, 1, length($4)-1)}'
         else
-                FILESIZE=$(blockdev --getsize64 $SRCFILE)
+                ls -l /proc/$pid/fd 2>/dev/null | awk '{printf "%s\t%s\n", $NF, $(NF-2)}' | grep "^$SRCFILE"$'\t' | awk -F$'\t' '{print $NF}' | awk -vpid=$pid '{printf "/proc/%u/fdinfo/%u\n", pid, $1}'
         fi
+}
 
-        echo $(( `echo $PROC_FD_INFO | awk '{print $2}'` * 100 / $FILESIZE )) %
-fi
+for PROC_FD in $( getProcFiles $PID ); do
+        PROC_FD_INFO=$( head -n1 "$PROC_FD" 2>/dev/null )
+        if [ $? -ne 0 ]; then
+                echo "Can't access to $PROC_FD"
+        else
+                # Echo processes
+                FILESIZE=0
+                if [ $DEV -eq 0 ]; then
+                        FILESIZE=$(wc -c $SRCFILE | awk '{print $1}')
+                else
+                        FILESIZE=$(blockdev --getsize64 $SRCFILE)
+                fi
+
+                printf "[%20s] %i %%\n" $PROC_FD $(( `echo $PROC_FD_INFO | awk '{print $2}'` * 100 / $FILESIZE ))
+        fi
+done
+
