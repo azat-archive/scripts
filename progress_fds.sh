@@ -47,8 +47,7 @@ function getProcFiles()
 
 function getFileInfoByProc()
 {
-    src=$(readlink -f ${1/fdinfo/fd})
-
+    src="$1"
     if [ ! -f $src ]; then
         if $(file $src 2>/dev/null | grep -q "sticky block special"); then
             blockdev --getsize64 $src
@@ -62,19 +61,28 @@ function getFileInfoByProc()
     wc -c $src | awk '{print $1}'
 }
 
+function getTerminalWidth()
+{
+    tput cols
+}
+
 for PROC_FD in $( getProcFiles "$PID" "$SRCFILE" ); do
     PROC_FD_INFO=$( head -n1 "$PROC_FD" 2>/dev/null )
     if [ $? -ne 0 ]; then
         echo "Can't access to $PROC_FD"
     else
-        size=$(getFileInfoByProc $PROC_FD)
+        src=$(readlink -f ${PROC_FD/fdinfo/fd})
+        size=$(getFileInfoByProc $src)
+        cols=$(( $(getTerminalWidth) - 20))
+
         if [ "$size" = "0" ]; then
             percents=0
         else
             percents=$(( `echo $PROC_FD_INFO | awk '{print $2}'` * 100 / $size ))
         fi
 
-        printf "[%20s] %i %%\n" $PROC_FD $percents
+        # TODO: trim common part at the beginning of file
+        printf "[%${cols}s] %i %%\n" $src $percents
     fi
 done
 
