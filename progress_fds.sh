@@ -19,7 +19,7 @@ SRCFILE=$1
 PID=$2
 
 # Not existed file, or not set
-if [ ! -f "$SRCFILE" ]; then
+if [ ! -f "$SRCFILE" ] && [ ! -b "$SRCFILE" ]; then
     if [[ $SRCFILE =~ ^[0-9]*$ ]]; then
         PID=$SRCFILE
     else
