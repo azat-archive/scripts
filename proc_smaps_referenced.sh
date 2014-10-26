@@ -22,5 +22,7 @@ END {
 EOF
 )
 
-smaps=/proc/$1/smaps
-awk "$script" < $smaps
+for p in $@; do
+    smaps=/proc/$p/smaps
+    awk "$script" < $smaps
+done
