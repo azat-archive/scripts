@@ -18,8 +18,8 @@ function testUrl()
     ipAddress=$(host $host | awk '/has address/ {print $NF; exit;}')
 
     cmd="nc.traditional -q0 -n -w5 -v $ipAddress $port"
-    [[ -n $onTheServer ]] && cmd="ssh $onTheServer bash -c'$cmd'"
-    $cmd < /dev/null >& /dev/null \
+    [[ -n $onTheServer ]] && cmd="ssh $onTheServer \"bash -c '$cmd'\""
+    eval $cmd < /dev/null >& /dev/null \
         && echo "[$onTheServer] Ok $host ($ipAddress:$port)" \
         || echo "[$onTheServer] Some error for $host ($ipAddress:$port)"
 }
