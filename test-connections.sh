@@ -10,7 +10,9 @@ function testConnections()
             port=80
         fi
         ipAddress=$(host $host | awk '/has address/ {print $NF; exit;}')
-        nc.traditional -q0 -n -w5 -v $ipAddress $port < /dev/null || echo "Some error for $host"
+        nc.traditional -q0 -n -w5 -v $ipAddress $port < /dev/null >& /dev/null \
+            || echo "Some error for $host ($ipAddress:$port)" && \
+            echo "Ok $host ($ipAddress:$port)"
     done
 }
 
