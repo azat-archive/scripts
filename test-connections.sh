@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # test connections on the remote server too
-remoteServers=
+remoteServers="$@"
 
 function testUrl()
 {
