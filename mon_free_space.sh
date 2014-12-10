@@ -31,7 +31,7 @@ function parseOptions()
 function diskUsedPercents()
 {
     local disk=$1
-    df -m | awk -vdisk=$disk '$0 ~ disk "$" { print substr($5, 1, length($5) - 1) }'
+    df -m $disk | awk '{ print substr($5, 1, length($5) - 1) }'
 }
 
 function main()
