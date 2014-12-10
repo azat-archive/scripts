@@ -4,7 +4,8 @@
 
 maxPercents=97
 interval=10
-disk=/
+diskDefault=1
+disks=/
 cmd=:
 
 function printUsage()
@@ -20,7 +21,12 @@ function parseOptions()
         case "$o" in
             m) maxPercents=$OPTARG;;
             i) interval=$OPTARG;;
-            d) disk=$OPTARG;;
+            d)
+                if [ $diskDefault -eq 1 ]; then
+                    diskDefault=0
+                    disks=
+                fi
+                disks+="$OPTARG ";;
             *) printUsage;;
         esac
     done
@@ -38,12 +44,16 @@ function main()
 {
     while :; do
         sleep $interval
-        if [ $(diskUsedPercents $disk) -lt $maxPercents ]; then
-            continue
-        fi
-        printf "Not enough space left on %s, executing user specified command\n" $disk
-        $cmd
-        break
+
+        for disk in $disks; do
+            if [ $(diskUsedPercents $disk) -lt $maxPercents ]; then
+                continue
+            fi
+
+            printf "Not enough space left on %s, executing user specified command\n" $disk
+            $cmd
+            exit
+        done
     done
 }
 
