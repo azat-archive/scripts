@@ -23,7 +23,7 @@ function parseOptions()
         esac
     done
     shift $((OPTIND-1))
-    [ -n "$*" ] && cmd="$@"
+    [ -n "$*" ] && cmd=$(printf '"%s" ' "$@")
 }
 
 function swapUsedPercents()
@@ -39,7 +39,7 @@ function main()
             continue
         fi
         echo "Too much swap used, executing user specified command"
-        $cmd
+        eval "$cmd"
         break
     done
 }
