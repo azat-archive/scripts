@@ -31,7 +31,7 @@ function parseOptions()
         esac
     done
     shift $((OPTIND-1))
-    [ -n "$*" ] && cmd="$@"
+    [ -n "$*" ] && cmd=$(printf '"%s" ' "$@")
 }
 
 function diskUsedPercents()
@@ -51,7 +51,7 @@ function main()
             fi
 
             printf "Not enough space left on %s, executing user specified command\n" $disk
-            $cmd
+            eval "$cmd"
             exit
         done
     done
