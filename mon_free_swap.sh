@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
 # Useful to kill/stop process if it will eat to much memory
+# @example: mon_free_swap pkill -STOP -u$USER
 
 maxPercents=97
 interval=10

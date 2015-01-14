@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
 # Useful to kill/stop process if there is no space left on device
+# @example: mon_free_space pkill -STOP -u$USER
 
 maxPercents=97
 interval=10
