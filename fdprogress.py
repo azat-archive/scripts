@@ -20,9 +20,12 @@ def getSize(pid, fd):
   return os.path.getsize(getPath(pid, fd))
 
 class FdIsPipe(Exception): pass
+class FdIsSocket(Exception): pass
 
 def getPath(pid, fd):
   result = os.readlink('/proc/%s/fd/%s' % (pid, fd))
+  if result.startswith('socket:['):
+    raise FdIsSocket(result)
   if result.startswith('pipe:['):
     raise FdIsPipe(result)
   return result
@@ -32,6 +35,8 @@ def extendHistory(history, pid):
     try:
       history[fd, getPath(pid, fd)].append(
         (time.time(), getPos(pid, fd), getSize(pid, fd)))
+    except FdIsSocket:
+      pass  # ignore sockets
     except FdIsPipe:
       pass  # ignore fds to pipe
 
