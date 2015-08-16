@@ -23,6 +23,10 @@ EOF
 )
 
 for p in $@; do
-    smaps=/proc/$p/smaps
+    if [ -f $p ]; then
+        smaps=$p
+    else
+        smaps=/proc/$p/smaps
+    fi
     awk "$script" < $smaps
 done
