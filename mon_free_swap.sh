@@ -2,24 +2,27 @@
 
 # Useful to kill/stop process if it will eat to much memory
 # @example: mon_free_swap pkill -STOP -u$USER
+# @example: mon_free_swap -c "pkill -CONT -u$USER" pkill -STOP -u$USER
 
 maxPercents=97
 interval=10
 cmd=:
+continueCmd=
 
 function printUsage()
 {
-    echo "$0 [ -m max_percents ] [ -i interval_secs ] [ cmd ]" >&2
+    echo "$0 [ -m max_percents ] [ -i interval_secs ] [ -c continue cmd ] [ cmd ]" >&2
     exit 1
 }
 
 function parseOptions()
 {
     local OPTIND o
-    while getopts "m:i:" o; do
+    while getopts "m:i:c:" o; do
         case "$o" in
             m) maxPercents=$OPTARG;;
             i) interval=$OPTARG;;
+            c) continueCmd="$OPTARG";;
             *) printUsage;;
         esac
     done
@@ -34,14 +37,27 @@ function swapUsedPercents()
 
 function main()
 {
+    local triggered=0
+
     while :; do
         sleep $interval
+
         if [ $(swapUsedPercents) -lt $maxPercents ]; then
+            if [ $triggered -eq 1 ]; then
+                eval "$continueCmd"
+                triggered=0
+            fi
             continue
         fi
-        echo "Too much swap used, executing user specified command"
-        eval "$cmd"
-        break
+
+        if [ $triggered -eq 0 ]; then
+            echo "Too much swap used, executing user specified command"
+            eval "$cmd"
+            triggered=1
+        fi
+        if [ -z "$continueCmd" ]; then
+            exit
+        fi
     done
 }
 
