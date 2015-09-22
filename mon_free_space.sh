@@ -2,23 +2,25 @@
 
 # Useful to kill/stop process if there is no space left on device
 # @example: mon_free_space pkill -STOP -u$USER
+# @example: mon_free_space -c "pkill -CONT -u$USER" pkill -STOP -u$USER
 
 maxPercents=97
 interval=10
 diskDefault=1
 disks=/
+continueCmd=
 cmd=:
 
 function printUsage()
 {
-    echo "$0 [ -m max_percents ] [ -i interval_secs ] [ -d mount_point ] [ cmd ]" >&2
+    echo "$0 [ -m max_percents ] [ -i interval_secs ] [ -d mount_point ] [ -c continue cmd ] [ cmd ]" >&2
     exit 1
 }
 
 function parseOptions()
 {
     local OPTIND o
-    while getopts "m:i:d:" o; do
+    while getopts "m:i:d:c:" o; do
         case "$o" in
             m) maxPercents=$OPTARG;;
             i) interval=$OPTARG;;
@@ -28,6 +30,7 @@ function parseOptions()
                     disks=
                 fi
                 disks+="$OPTARG ";;
+            c) continueCmd="$OPTARG";;
             *) printUsage;;
         esac
     done
@@ -43,17 +46,28 @@ function diskUsedPercents()
 
 function main()
 {
+    local triggered=0
+
     while :; do
         sleep $interval
 
         for disk in $disks; do
             if [ $(diskUsedPercents $disk) -lt $maxPercents ]; then
+                if [ $triggered -eq 1 ]; then
+                    eval "$continueCmd"
+                    triggered=0
+                fi
                 continue
             fi
 
-            printf "Not enough space left on %s, executing user specified command\n" $disk
-            eval "$cmd"
-            exit
+            if [ $triggered -eq 0 ]; then
+                printf "Not enough space left on %s, executing user specified command\n" $disk
+                eval "$cmd"
+                triggered=1
+            fi
+            if [ -z "$continueCmd" ]; then
+                exit
+            fi
         done
     done
 }
