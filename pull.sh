@@ -16,7 +16,7 @@ function get_tag()
 }
 function clang_format_config()
 {
-    echo "{ $(sed -e 's/#.*//' -e '/---/d' -e '/\.\.\./d' $clang_format_config_path | tr $'\n' ,) }"
+    echo "{ $(sed -e 's/#.*//' -e '/---/d' -e '/\.\.\./d' "$@" | tr $'\n' ,) }"
 }
 function clang_format()
 {
@@ -37,7 +37,10 @@ function clang_format()
 
             diff -u \
                <(git cat-file -p $ref:$f) \
-               <(git cat-file -p $ref:$f | clang-format-3.6 -style "$(clang_format_config)" -lines $start:$end) \
+               <(git cat-file -p $ref:$f | \
+                 clang-format-3.6 \
+                   -style "$(clang_format_config $clang_format_config_path)" \
+                   -lines $start:$end) \
                | \
             sed -r -e "s#^--- /dev.*\$#--- a/$f#" \
                    -e "s#^\+\+\+ /dev.*\$#\+\+\+ b/$f#"
