@@ -18,6 +18,7 @@ function clang_format_config()
 {
     echo "{ $(sed -e 's/#.*//' -e '/---/d' -e '/\.\.\./d' "$@" | tr $'\n' ,) }"
 }
+function clang_version() { ls -t "$@" | sort -Vr | head -1; }
 function clang_format()
 {
     local ref=$1
@@ -38,7 +39,7 @@ function clang_format()
             diff -u \
                <(git cat-file -p $ref:$f) \
                <(git cat-file -p $ref:$f | \
-                 clang-format-3.6 \
+                 $(clang_version /usr/bin/clang-format-?.?) \
                    -style "$(clang_format_config $clang_format_config_path)" \
                    -lines $start:$end) \
                | \
