@@ -10,17 +10,18 @@ diskDefault=1
 disks=/
 continueCmd=
 cmd=:
+loop=0
 
 function printUsage()
 {
-    echo "$0 [ -m max_percents ] [ -i interval_secs ] [ -d mount_point ] [ -c continue cmd ] [ cmd ]" >&2
+    echo "$0 [ -m max_percents ] [ -i interval_secs ] [ -d mount_point ] [ -c continue cmd ] [ -l ] [ cmd ]" >&2
     exit 1
 }
 
 function parseOptions()
 {
     local OPTIND o
-    while getopts "m:i:d:c:" o; do
+    while getopts "m:i:d:c:l" o; do
         case "$o" in
             m) maxPercents=$OPTARG;;
             i) interval=$OPTARG;;
@@ -31,6 +32,7 @@ function parseOptions()
                 fi
                 disks+="$OPTARG ";;
             c) continueCmd="$OPTARG";;
+            l) loop=1;;
             *) printUsage;;
         esac
     done
@@ -60,12 +62,12 @@ function main()
                 continue
             fi
 
-            if [ $triggered -eq 0 ]; then
+            if [ $triggered -eq 0 ] || [ $loop -eq 1 ]; then
                 printf "Not enough space left on %s, executing user specified command\n" $disk
                 eval "$cmd"
                 triggered=1
             fi
-            if [ -z "$continueCmd" ]; then
+            if [ -z "$continueCmd" ] && [ $loop -eq 0 ]; then
                 exit
             fi
         done
