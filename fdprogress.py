@@ -19,8 +19,9 @@ def getPos(pid, fd):
 def getSize(pid, fd):
   return os.path.getsize(getPath(pid, fd))
 
-class FdIsPipe(Exception): pass
 class FdIsSocket(Exception): pass
+class FdIsPipe(Exception): pass
+class FdIsAnon(Exception): pass
 
 def getPath(pid, fd):
   result = os.readlink('/proc/%s/fd/%s' % (pid, fd))
@@ -28,6 +29,8 @@ def getPath(pid, fd):
     raise FdIsSocket(result)
   if result.startswith('pipe:['):
     raise FdIsPipe(result)
+  if result.startswith('anon_inode:['):
+    raise FdIsAnon(result)
   return result
 
 def extendHistory(history, pid):
@@ -36,9 +39,11 @@ def extendHistory(history, pid):
       history[fd, getPath(pid, fd)].append(
         (time.time(), getPos(pid, fd), getSize(pid, fd)))
     except FdIsSocket:
-      pass  # ignore sockets
+      pass
     except FdIsPipe:
-      pass  # ignore fds to pipe
+      pass
+    except FdIsAnon:
+      pass
 
 def initHistory(pid):
   result = defaultdict(list)
