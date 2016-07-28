@@ -22,6 +22,7 @@ def getSize(pid, fd):
 class FdIsSocket(Exception): pass
 class FdIsPipe(Exception): pass
 class FdIsAnon(Exception): pass
+class FdISDeleted(Exception): pass
 
 def getPath(pid, fd):
   result = os.readlink('/proc/%s/fd/%s' % (pid, fd))
@@ -31,6 +32,8 @@ def getPath(pid, fd):
     raise FdIsPipe(result)
   if result.startswith('anon_inode:['):
     raise FdIsAnon(result)
+  if result.endswith(' (deleted)'):
+    raise FdIsDeleted(result)
   return result
 
 def extendHistory(history, pid):
@@ -43,6 +46,8 @@ def extendHistory(history, pid):
     except FdIsPipe:
       pass
     except FdIsAnon:
+      pass
+    except FdIsDeleted:
       pass
 
 def initHistory(pid):
