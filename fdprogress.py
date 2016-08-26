@@ -22,7 +22,7 @@ def getSize(pid, fd):
 class FdIsSocket(Exception): pass
 class FdIsPipe(Exception): pass
 class FdIsAnon(Exception): pass
-class FdISDeleted(Exception): pass
+class FdIsDeleted(Exception): pass
 
 def getPath(pid, fd):
   result = os.readlink('/proc/%s/fd/%s' % (pid, fd))
