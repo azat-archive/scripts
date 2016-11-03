@@ -34,7 +34,7 @@ function parseOptions()
 
 function swapUsedPercents()
 {
-    free -m | awk '/Swap:/ {printf("%.f\n", ($3/$2)*100);}'
+    free -m | awk '/Swap:/ {printf("%.f\n", $2?($3/$2)*100:0);}'
 }
 
 function main()
