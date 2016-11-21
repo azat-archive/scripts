@@ -29,7 +29,8 @@ exec(sprintf('env GIT_DIR=%s git log --format="%s" %s', escapeshellarg($dir), $f
 
 $history = array();
 foreach ($output as $line) {
-    preg_match('@^\[(?P<group>.*)\](?P<subject>.*) \((?P<sha>[0-9a-f]*)\)@', $line, $m);
+    preg_match('@^(\[(?P<group1>.*)\]|(?P<group2>.*):)(?P<subject>.*) \((?P<sha>[0-9a-f]*)\)@', $line, $m);
+    $m['group'] = $m['group2'] ?: $m['group1'];
 
     if (empty($history[$m['group']])) {
         $history[$m['group']] = array();
