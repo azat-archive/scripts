@@ -56,7 +56,7 @@ def initHistory(pid):
   return result
 
 def reduceHistory(history):
-  for key, value in history.iteritems():
+  for key, value in history.items():
     if len(value) > 2:
       del value[1:-2]  # only keep first and last
       # (this can be more clever in the future)
@@ -86,7 +86,7 @@ def entryPrediction(fd, path, values):
           tPosSize2, tm, sizeM)
 
 def eachPrediction(history):
-  for (fd, path), values in history.iteritems():
+  for (fd, path), values in history.items():
     yield entryPrediction(fd, path, values)
 
 def displayTime(t):
@@ -129,14 +129,14 @@ def displaySpeed(speed):
 def printPrediction(history):
   for (fd, path, (t2, pos2, size2), growth, speed, tSize0, tPos0,
        tPosSize2, tm, sizeM) in eachPrediction(history):
-    print '\n', fd, "->", os.path.basename(path)
+    print("\n{} -> {}".format(fd, os.path.basename(path)))
     dT = displayTime
     dSi = displaySize
     dSp = displaySpeed
-    print "size:", dSi(size2), "\tgrowth:", dSp(growth), \
-          "\t\tpos:", dSi(pos2), "\tspeed:", dSp(speed)
-    print "emptyTime:", dT(tSize0), "\tstartTime:", dT(tPos0), \
-          "\treachTime:", dT(tPosSize2), "\tmeetTime:", dT(tm)
+    print("size: {}\tgrowth: {}\t\tpos: {}\tspeed: {}".format(
+        dSi(size2), dSp(growth), dSi(pos2), dSp(speed)))
+    print("emptyTime: {}\tstartTime: {}\treachTime: {}\tmeetTime: {}".format(
+        dT(tSize0), dT(tPos0), dT(tPosSize2), dT(tm)))
 
 def main(argv):
   pid = argv[1]
