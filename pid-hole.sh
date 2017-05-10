@@ -6,7 +6,10 @@ function pid_files()
 }
 function pid_files_offsets()
 {
-    ls -1 /proc/$1/fdinfo/* | awk '{ fd=f=$NF; sub(/^.*\/fdinfo\//, "", fd); getline < f; pos=$NF; printf("%s %s\n", fd, pos); }'
+    # flags: 0100001 -- write
+    # flags: 0100002 -- read|write
+    # flags: 0100000 -- read
+    ls -1 /proc/$1/fdinfo/* | awk -vmode=$mode '{ fd=f=$NF; sub(/^.*\/fdinfo\//, "", fd); getline < f; pos=$NF; getline < f; flags=$NF; if (mode == "all" || (mode == "read" && flags == "0100000") || (mode == "write" && flags == "0100001")) { printf("%s %s\n", fd, pos); } }'
 }
 function j_sort() { sort -k 1b,1; }
 function pid_files_extend()
@@ -28,6 +31,9 @@ Options:
  -p    - pattern for files that can be modified
  -D    - disable dry run mode
  -l    - minimal offset after which hole is appropriate
+
+ -r    - apply holes only for files that opened for READ
+ -w    - apply holes only for files that opened for WRITE
 EOL
 }
 function options()
@@ -35,6 +41,7 @@ function options()
     pattern=".*"
     dry_run=1
     limit=$((4096 * 10))
+    mode=all
 
     if [ $# -eq 0 ]; then
         usage
@@ -42,11 +49,13 @@ function options()
     fi
 
     local OPTIND c OPTARG
-    while getopts "p:l:D" c; do
+    while getopts "p:l:Drw" c; do
         case "$c" in
             p) pattern="$OPTARG";;
             D) dry_run=0;;
             l) limit="$OPTARG";;
+            r) mode="read";;
+            w) mode="write";;
         esac
     done
 
