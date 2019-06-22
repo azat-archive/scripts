@@ -32,6 +32,7 @@
 # defaults
 SESSION=$USER
 SSH_USER=$USER
+SSH_COMMAND=ssh
 WINDOW=`basename $0`
 # synchronize panes: 1=yes, 0=no
 SYNC=1
@@ -58,6 +59,9 @@ Arguments:
  -u ssh_user
     User to ssh as.
 
+ -e ssh_command
+    Overwrite ssh command.
+
  -v verbose
     Tell me something interesting.
 
@@ -74,9 +78,10 @@ debug() {
     echo "Synchronize: $SYNC"
     echo "    Servers: $SERVERS"
     echo "   SSH User: $SSH_USER"
+    echo "SSH Command: $SSH_COMMAND"
 }
 
-while getopts hvnt:u:w: opt
+while getopts hvnt:u:w:e: opt
 do
     case "$opt" in
       n)  SYNC="0";;
@@ -84,6 +89,7 @@ do
       u)  SSH_USER="$OPTARG";;
       v)  verbose=on;;
       w)  WINDOW="$OPTARG";;
+      e)  SSH_COMMAND="$OPTARG";;
       h) usage && exit 0;;
       \?) usage && exit 1;; # unknown flag
     esac
@@ -108,7 +114,7 @@ open_windows() {
     # sending keys gives you a chance to decide when to type in password
     for server in $SERVERS; do
         tmux split-window  -t "$SESSION:$WINDOW" -h
-        tmux send-keys     -t "$SESSION:$WINDOW" "ssh $SSH_USER@$server"
+        tmux send-keys     -t "$SESSION:$WINDOW" "$SSH_COMMAND $SSH_USER@$server"
         # split -h seems to stop at 5 unless layout is changed
         tmux select-layout -t "$SESSION:$WINDOW" tiled
     done
