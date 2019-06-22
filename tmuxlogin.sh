@@ -34,7 +34,7 @@ SESSION=$USER
 SSH_USER=$USER
 SSH_COMMAND=ssh
 TMUX_SOCKET=
-WINDOW=`basename $0`
+WINDOW=$(basename "$0")
 # synchronize panes: 1=yes, 0=no
 SYNC=1
 SERVERS='localhost'
@@ -110,19 +110,18 @@ do
     esac
 done
 
-shift `expr $OPTIND - 1`
+shift $((OPTIND - 1))
 if [ -n "$*" ]; then
     SERVERS=$*
 fi
 
 open_windows() {
     # true if this is a brand new session
-    new_session=$1
+    local new_session=$1
 
-    tmux list-windows -t "$SESSION" | grep "$WINDOW" > /dev/null
-    if [ $? -eq 0 ]; then
+    if tmux list-windows -t "$SESSION" 2>/dev/null | grep -q "$WINDOW"; then
         echo "Window '$SESSION:$WINDOW' already exists. Aborting."
-    return
+        return
     fi
 
     # split window and echo servers to each pane
@@ -159,19 +158,18 @@ if [ -n "$verbose" ]; then
 fi
 
 # does this session already exist?
-tmux has-session -t "$SESSION"
-if [ $? -ne 0 ]; then
+if ! tmux has-session -t "$SESSION" >& /dev/null; then
     if [ -n "$TMUX" ]; then
-    # we are attached to a session of another name
+        # we are attached to a session of another name
         attached=`tmux list-sessions | grep attached | cut -d: -f1`
         echo "Creating new session '$SESSION' while attached to '$attached' is not well supported."
-    exit 1
+        exit 1
     else
-    # session does not exist. create it.
-    # this won't work if we are attached. even if the session name is different
-    # the hack is to remove $TMUX temporarily
-    tmux new-session -d -s "$SESSION"
-    split_only=1
+        # session does not exist. create it.
+        # this won't work if we are attached. even if the session name is different
+        # the hack is to remove $TMUX temporarily
+        tmux new-session -d -s "$SESSION" || exit 1
+        split_only=1
     fi
 fi
 # time to open a window and chop it up
