@@ -33,16 +33,26 @@
 SESSION=$USER
 SSH_USER=$USER
 SSH_COMMAND=ssh
+TMUX_SOCKET=
 WINDOW=`basename $0`
 # synchronize panes: 1=yes, 0=no
 SYNC=1
 SERVERS='localhost'
 
+function tmux()
+{
+    if [[ -n $TMUX_SOCKET ]]; then
+        command tmux -L $TMUX_SOCKET "$@"
+    else
+        command tmux "$@"
+    fi
+}
+
 usage() {
     cat <<EOF >&2
 $0 - Open multiple tmux panes, each logged into a different server.
 
-Usage: $0 [-t tmux_session] [-w tmux_window] [-u ssh_user] [-v] <hosts ...>
+Usage: $0 [OPTS] <hosts ...>
 
 Arguments:
 
@@ -51,6 +61,9 @@ Arguments:
 
  -n no_synchronize
     Do not synchronize panes.
+
+ -L tmux socket
+    Custom socket for the tmux
 
  -t tmux_session
     Name of existing tmux session to target, or new session.
@@ -79,9 +92,10 @@ debug() {
     echo "    Servers: $SERVERS"
     echo "   SSH User: $SSH_USER"
     echo "SSH Command: $SSH_COMMAND"
+    echo "TMUX socket: $TMUX_SOCKET"
 }
 
-while getopts hvnt:u:w:e: opt
+while getopts hvnt:u:w:e:L: opt
 do
     case "$opt" in
       n)  SYNC="0";;
@@ -90,6 +104,7 @@ do
       v)  verbose=on;;
       w)  WINDOW="$OPTARG";;
       e)  SSH_COMMAND="$OPTARG";;
+      L)  TMUX_SOCKET="$OPTARG";;
       h) usage && exit 0;;
       \?) usage && exit 1;; # unknown flag
     esac
